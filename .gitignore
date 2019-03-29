@@ -11,4 +11,6 @@ audioset/*
 Notebooks/audioset_v1_embeddings/
 *.tar.gz
 *.webm
+*.m4a
 *.wav
+*.h5

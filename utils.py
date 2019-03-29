@@ -1,11 +1,14 @@
 from pydub import AudioSegment
 import h5py
+import youtube_dl #pip install youtube_dl
+import webvtt #pip install webvtt-py
+import numpy as np
 
 
-def sound_slice_generator(sound_path, clipsize=500):
+def sound_slice_generator(sound_path, clipsize=1000, sample_rate=48000):
     '''
     Generates np array value from sound clip to feed into VGGish Embedder
-    This function overlaps clipsize/2 of the previous iteration into the current iteration
+    Define a clipsize and use clipsize/2 as the lag. 
     
     |--|--|--|--|--|--|--|--| clipsize/2
     
@@ -27,6 +30,7 @@ def sound_slice_generator(sound_path, clipsize=500):
     
     sound = AudioSegment.from_file(sound_path)
     sound = sound.set_frame_rate(sample_rate)
+    print('No of sound slices', sound.duration_seconds * 2)
     step = int(clipsize/2)
     list_sounds = sound[::step]  # generate clipsize/2 values of the clip
     prev_iter_value = None
@@ -43,8 +47,6 @@ def sound_slice_generator(sound_path, clipsize=500):
         #print(idx, s_reshaped.shape)
         yield s_reshaped, v.frame_rate
         
-        
-        
 
 def save_embeddings_hdf(path_file, list_of_embeddings):
     '''
@@ -52,7 +54,28 @@ def save_embeddings_hdf(path_file, list_of_embeddings):
     
     
     '''
-    with h5py.File(path_file+'h5', 'w', libver='latest') as f:  # use 'latest' for performance
+    with h5py.File(path_file+'.h5', 'w', libver='latest') as f:  # use 'latest' for performance
 
         for idx, v in list_of_embeddings:
             dset = f.create_dataset(str(idx), data=v, compression='gzip', compression_opts=9)
+            
+
+def download_audio_subtitle(url):
+    filename = None
+    def my_hook(d):
+        if d['status'] == 'finished':
+            filename = d['filename']
+    
+    ydl_opts = {
+        'format': 'bestaudio/best',
+        'outtmpl': '%(title)s.%(ext)s',
+        'writesubtitles': True,
+        'writeautomaticsub': True,
+        'quiet': True,
+        'progress_hooks': [my_hook],
+    }
+
+    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+        ydl.download([url])  # Download into the current working directory
+        
+    return filename
