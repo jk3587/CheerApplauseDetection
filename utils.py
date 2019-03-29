@@ -3,7 +3,8 @@ import h5py
 import youtube_dl #pip install youtube_dl
 import webvtt #pip install webvtt-py
 import numpy as np
-
+import os
+import youtube_dl
 
 def sound_slice_generator(sound_path, clipsize=1000, sample_rate=48000):
     '''
