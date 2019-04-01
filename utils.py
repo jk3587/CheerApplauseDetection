@@ -31,7 +31,9 @@ def sound_slice_generator(sound_path, clipsize=1000, sample_rate=48000):
     
     sound = AudioSegment.from_file(sound_path)
     sound = sound.set_frame_rate(sample_rate)
-    print('No of sound slices', sound.duration_seconds * 2)
+    sound = sound.set_channels(1)
+    sound = sound.set_sample_width(2)
+    print('No of sound slices', sound.duration_seconds * 1000 / clipsize * 2)
     step = int(clipsize/2)
     list_sounds = sound[::step]  # generate clipsize/2 values of the clip
     prev_iter_value = None
@@ -43,7 +45,7 @@ def sound_slice_generator(sound_path, clipsize=1000, sample_rate=48000):
         overlapped = prev_iter_value + v # combine current 
         samples = overlapped.get_array_of_samples()
         np_samples = np.array(samples)
-        s_reshaped = np_samples.reshape((-1,2))
+        s_reshaped = np_samples.reshape((-1,1))
         prev_iter_value = v
         #print(idx, s_reshaped.shape)
         yield s_reshaped, v.frame_rate
@@ -55,7 +57,8 @@ def save_embeddings_hdf(path_file, list_of_embeddings):
     
     
     '''
-    with h5py.File(path_file+'.h5', 'w', libver='latest') as f:  # use 'latest' for performance
+
+    with h5py.File(path_file, 'w', libver='latest') as f:  # use 'latest' for performance
 
         for idx, v in list_of_embeddings:
             dset = f.create_dataset(str(idx), data=v, compression='gzip', compression_opts=9)

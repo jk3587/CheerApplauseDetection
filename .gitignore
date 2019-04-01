@@ -14,3 +14,4 @@ Notebooks/audioset_v1_embeddings/
 *.m4a
 *.wav
 *.h5
+*.zip
