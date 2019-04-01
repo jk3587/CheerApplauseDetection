@@ -6,10 +6,22 @@ change labels to 'cheering' and 'applause'
 
 
 *to-do
+-augment positive label data (label 66, 67 in Audioset)
+-retrain model with augmented data
+-run inference with longer clipsize (~2000ms)
+-group predicted timestamps to find start and end of every instance of cheer/applause (try non-max suppression?)
+-analyze/plot predicted labels
+-gather sentences before each predicted timestamp
+-NLP on the gathered sentences (find topics, sentiment, etc)
+-analyze videos of speakers over time and find common topics
+
+
+*done
 -train model
 -evaluate model
 -modify inference script
 -run inference on speech videos
+
 
 # Laugh Detector
 
