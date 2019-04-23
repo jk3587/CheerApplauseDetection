@@ -1,79 +1,88 @@
-Converted to TensorFlow 2.0 via:
-http://tf2up.ml
+*Author* : JK Kang
+*Contact* : jk3587@gmail.com
 
-Changes from original repo:
-change labels to 'cheering' and 'applause'
+# Cheering/Applause Detector
 
+This project aims to create an end-to-end pipeline where a user would input a video (YouTube link). The video's audio will get analyzed for any cheering or applauses that occurs in the video. The output would be a csv that lists every occurrence of cheering/applause's time stamp as well as the subtitle at that time.
 
-*to-do
--augment positive label data (label 66, 67 in Audioset)
--retrain model with augmented data
--run inference with longer clipsize (~2000ms)
--group predicted timestamps to find start and end of every instance of cheer/applause (try non-max suppression?)
--analyze/plot predicted labels
--gather sentences before each predicted timestamp
--NLP on the gathered sentences (find topics, sentiment, etc)
--analyze videos of speakers over time and find common topics
+### General Use Case Workflow
+1. User inputs a YouTube link (`run_on_own_audiofile.ipynb`)
+    - Results .csv
+2. Explore subtitles and the results csv from previous step (`Explore_Subtitles_vs_Predictions.ipynb`)
 
+### Potential Business Value
+This workflow can be refined and applied to quantify reception metrics for sporting matches, comedy shows, popular speeches, etc. It can be used as vehicle to answer an audience's taste in humor-- a rather esoteric subject.
 
-*done
--train model
--evaluate model
--modify inference script
--run inference on speech videos
+## Table of Contents
+TO_DO Later
 
+## Setup and Requirements
+Requirements are in a `environment.yaml` file.
 
-# Laugh Detector
+If you have Anaconda installed, run the following line:
+``` shell
+conda env create -f environment.yaml
+````
 
-This is the code accompanying blog posts (Here and Here) for training and running a laugh detector. This project is based on [AudioSet](https://research.google.com/audioset/) and includes a rebalanced subset of their data and utilizes their pre-trained audio feature vectorizer [vggish](https://github.com/tensorflow/models/tree/master/research/audioset). I also followed the lead of a [similar project](https://github.com/ganesh-srinivas/laughter) for processing the AudioSet data and choosing network architectures
+### Minimum Computing Requirements
+This is the minimum computing requirements to run the model.
 
-This repo contains code for running live inference of the presence of laughter, a few pre-trained models, code that was used for training, a subset of the AudioSet data containing a balanced set of laughter and non-laughter human speech and a dashboard for visualizing the amount of laughter.
+## Retrieving Timestamp and Predictions
 
-## Running Live Inference
+In the iPython notebook, there are several URLs that points to popular speeches such as "I Have a Dream" and the State of the Union from 2019.
+By calling the `download audio` function, you can put in any url, and itould download the audio with the subtitles.
 
-Running `live_inference.py` will use your computer's microphone to capture audio and infer the presence of laughter in segmented chunks. These scores can be written to a time-stamped .csv and/or used to control a wireless light on a Philips Hue bridge.
+The clipsize is how long of a segment the model looks at whether there is cheering or applause. The default is `1000` (aka 1000ms). 
 
-### Setup
+A prediction amount is assigned to the segment using the model located in `Models/v2_cheer_applause_LSTM_ThreeLayer_100Epochs.h5`.
 
-First, install the python requirements:
-`pip install -r requirements.txt`
+Side Note: Please refer to the "Training Your Own Model" in the Appendix if you would want to use a different model. 
 
-You will then need to download [vggish_model.ckpt](https://storage.googleapis.com/audioset/vggish_model.ckpt) from AudioSet and move it to the `audioset` directory to run the vggish model.
+The `save_embeddings_hdf` function from the `utils.py` module, will save the list of embeddings for audio files.
 
-You will also need to install [Portaudio](http://www.portaudio.com/download.html) to run the live inference script. On macOS you can accomplish this with [homebrew](https://brew.sh/)
+Combine the resulting predictions (list format) with a timespace (linspace derived from clipsize) to create a dataframe which can be then saved as a csv.
 
-`$ brew install portaudio`
+Here is a sample table:
 
-### Running the Detector
+![IMAGE](resources/C6A1A6A7CFDB5A98ADAA7ECFCF813573.jpg =210x299)
 
-You can run the laugh detector using a pre-trained model from the command line
+## Exploring Subtitles vs. Predictions
 
-`$ python live_inference.py --save_file='\path\to\output.csv'`
+The second part of the workflow is to analyze what was presumably said during the time when there was a cheer/applause.
+This was done by extracting the subtitles and aligning the timestamps together.
 
-If you want to control a Philips Hue bulb, first get the IP address of your bridge, then run
+TO_DO
 
-`$ python live_inference.py --hue_lights='True' --hue_IP='your.bridge.ip.address'`
+## Appendix
 
-The first time you run this, you will need to press the connection button within 30 seconds of the phue library loading. See the [phue library](https://github.com/studioimaginaire/phue) if you have trouble connecting
+### About the Data
+The dataset is called Audioset from https://research.google.com/audioset/.
+It is a large-scale dataset of manually annotated audio events.
 
-## Using the Dashboard
+It consists of 632 audio event classes and a collection of 2M+ human-labeled 10-second sound clips from YouTube videos.It covers a wide range of human and animal sounds, musical instruments and sgenres, and common everyday environmental sounds.
 
-The dashboard is built using [Dash](https://dash.plot.ly/), you can run it with
+For this particular data pipeline, I selected to train on the "cheers" and "applause" sound.
 
-`$ python dashboard/dashboard.py`
-
-It is currently working on a sample data set, but you can edit the file to point to a new datafile.
-
-## Training Your Own Models
-
-This repo contains three pre-trained models in the Models directory. You can run the code in `Notebooks/ModelTraining.ipynb` to repeat the training process or to use it as a skeleton for training your own models. This notebook uses [keras-tqdm](https://github.com/bstriner/keras-tqdm) for the progress bars, which doesn't play well with JupyterLab. You can either run the notebook in a classic Jupyter Notebook or disable keras-tqdm, it won't change the training process.
-
-This repo contains two processed subsets of the AudioSet data: a training set of 18,768 samples where half the data has a laughter label (including "Laughter", "Baby laughter", "Giggle", "Snicker", "Belly laugh", and "Chuckle, chortle") and the other half has a non-laughter human noise label (including "Speech", "Male speech, man speaking", "Female speech, woman speaking", "Child speech, kid speaking", "Conversation", "Narration, monologue", "Babbling", "Crowd", and "Hubbub, speech noise, speech babble"). Samples can have multiple labels, but a positive "laughter" label is only assigned if one of the laughter labels is present and a negative label affirms the absence of any laughter label. The evaluation set contains 568 samples from the evaluation data with the same distribution. These rebalanced datasets are in `Data/bal_laugh_speech_subset.tfrecord` and `Data/eval_laugh_speech_subset.tfrecord` respectively.
-
-The pre-trained models and re-balanced subset data are all licensed under a [Creative Commons Attribution 4.0 International License.](https://creativecommons.org/licenses/by/4.0/)
-
-If you want to create your own processed subset of the AudioSet data on a different collection of labels, you can follow the code in `Notebooks/AudiosetProcessing.ipynb`. You can create your own subsets of the Audioset data by creating a list of labels to use for the positive and negative cases.
+### About the VGGish Embedder
+TO_DO write more information regarding the VGGish Embedder
 
 
+### Various Models (Traditional ML (Logistic Regression, SVM, Tree Classifiers) vs. LSTM)
+TO_DO write the different approaches used
 
+### Training Your Own Model
+It is possible to train your own model and modify the workflow to finetune what the neural network is looking for.
+
+Currently, this workflow uses the models located in this directory `Models/v2_cheer_applause_LSTM_ThreeLayer_100Epochs.h5.
+
+
+### TO DO LIST
+- augment positive label data (label 66, 67 in Audioset)
+- retrain model with augmented data
+- run inference with longer clipsize (~2000ms)
+- group predicted timestamps to find start and end of every instance of cheer/applause (try non-max suppression?)
+- analyze/plot predicted labels
+- gather sentences before each predicted timestamp
+- NLP on the gathered sentences (find topics, sentiment, etc)
+- Analyze videos of speakers over time and find common topics
 
